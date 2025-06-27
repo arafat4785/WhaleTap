@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>WhaleTap</title>
+    <style>
+        /* CSS Reset and Global Styles */
+        :root {
+            --background-color: #121212;
+            --primary-text-color: #ffffff;
+            --secondary-text-color: #b3b3b3;
+            --accent-color: #ffd700; /* Gold */
+            --nav-background: #1e1e1e;
+            --card-background: #282828;
+            --success-color: #4CAF50;
+            --error-color: #f44336;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--primary-text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent; /* Disable tap highlight */
+        }
+
+        /* Main App Container */
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        /* Page Management */
+        .page {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            height: 100%;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .page.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Bottom Navigation Bar */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            background-color: var(--nav-background);
+            border-top: 1px solid #333;
+            width: 100%;
+            padding: 10px 0;
+        }
+
+        .nav-button {
+            background: none;
+            border: none;
+            color: var(--secondary-text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            flex-grow: 1;
+            padding: 5px 0;
+            font-size: 12px;
+            transition: color 0.2s;
+        }
+
+        .nav-button svg {
+            width: 28px;
+            height: 28px;
+            margin-bottom: 4px;
+            fill: currentColor;
+        }
+
+        .nav-button.active {
+            color: var(--accent-color);
+        }
+
+        /* ---- Tap Page ---- */
+        #page-tap {
+            justify-content: space-between;
+        }
+        
+        .points-display {
+            font-size: 48px;
+            font-weight: bold;
+            color: var(--primary-text-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .points-display img {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
+
+        .tap-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            flex-grow: 1;
+        }
+
+        .coin {
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #ffeb3b, #ffd700, #f5b400);
+            box-shadow: 0 0 10px var(--accent-color), 0 0 40px rgba(255, 215, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.1s ease;
+        }
+        .coin:active {
+            transform: scale(0.95);
+        }
+
+        .coin svg {
+            width: 60%;
+            height: 60%;
+            fill: rgba(0,0,0,0.3);
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+        }
+        
+        .floating-text {
+            position: absolute;
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--accent-color);
+            opacity: 0;
+            animation: floatUp 1s ease-out;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        @keyframes floatUp {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-100px); }
+        }
+
+        .energy-bar-container {
+            width: 100%;
+            padding: 10px 0;
+        }
+        
+        .energy-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .energy-bar {
+            width: 100%;
+            height: 15px;
+            background-color: var(--card-background);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .energy-level {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #8bc34a);
+            border-radius: 10px;
+            transition: width 0.5s ease-in-out;
+        }
+
+        /* ---- Profile Page ---- */
+        .profile-card, .task-card, .withdraw-card {
+            background-color: var(--card-background);
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 15px;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .profile-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: var(--accent-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--background-color);
+            margin-right: 15px;
+        }
+
+        .profile-name {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .profile-info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #333;
+        }
+        .profile-info-item:last-child {
+            border-bottom: none;
+        }
+        .profile-info-label {
+            color: var(--secondary-text-color);
+        }
+        .profile-info-value {
+            font-weight: 500;
+        }
+
+        /* ---- Task Page ---- */
+        #page-task {
+            width: 100%;
+        }
+        .task-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .task-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .task-icon {
+            font-size: 24px;
+            margin-right: 15px;
+        }
+        
+        .task-details h4 {
+            font-size: 16px;
+        }
+        
+        .task-details p {
+            font-size: 12px;
+            color: var(--secondary-text-color);
+        }
+
+        .task-button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        .task-button.claim {
+            background-color: var(--accent-color);
+            color: var(--background-color);
+        }
+        
+        .task-button.completed {
+            background-color: var(--success-color);
+            color: var(--primary-text-color);
+        }
+
+
+        /* ---- Withdraw Page ---- */
+        #page-withdraw {
+            width: 100%;
+        }
+        
+        .withdraw-card h3 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--secondary-text-color);
+            font-size: 14px;
+        }
+        
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--background-color);
+            border: 1px solid #444;
+            border-radius: 8px;
+            color: var(--primary-text-color);
+            font-size: 16px;
+        }
+        
+        .withdraw-button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background-color: var(--accent-color);
+            color: var(--background-color);
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: opacity 0.2s;
+        }
+        
+        .withdraw-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        #withdraw-details > div {
+             display: none;
+        }
+        
+        #withdraw-details > div.active {
+             display: block;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="app">
+        <main class="main-content">
+            <!-- Profile Page -->
+            <section id="page-profile" class="page">
+                <div class="profile-card">
+                    <div class="profile-header">
+                        <div class="profile-avatar" id="profile-avatar"></div>
+                        <div class="profile-name" id="profile-name"></div>
+                    </div>
+                    <div class="profile-info">
+                        <div class="profile-info-item">
+                            <span class="profile-info-label">Total Points</span>
+                            <span class="profile-info-value" id="profile-points"></span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="profile-info-label">Join Date</span>
+                            <span class="profile-info-value" id="profile-join-date"></span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="profile-info-label">Referral Link</span>
+                            <span class="profile-info-value" id="profile-referral">t.me/whaletap_bot?start=123</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tap Page -->
+            <section id="page-tap" class="page active">
+                <div class="points-display">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmZDcwMCI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgMThjLTQuNDEgMC04LTMuNTktOC04czMuNTktOCA4LTggOCAzLjU5IDggOC0zLjU5IDgtOCA4eiIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjUiLz48L3N2Zz4=" alt="coin">
+                    <span id="points-counter">0</span>
+                </div>
+                <div class="tap-area">
+                    <div class="coin" id="coin">
+                        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Simple Whale Shape -->
+                            <path d="M 85,45 C 85,25 70,15 50,15 C 30,15 15,25 15,45 C 15,65 25,75 40,80 L 40,60 Q 45,55 50,60 L 50,80 Q 75,75 85,60 C 90,55 90,50 85,45 Z M 75,45 A 5 5 0 1 1 75,55 A 5 5 0 1 1 75,45"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="energy-bar-container">
+                    <div class="energy-info">
+                        <span>⚡️ Energy</span>
+                        <span id="energy-level-text">100 / 100</span>
+                    </div>
+                    <div class="energy-bar">
+                        <div id="energy-level" class="energy-level"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Task Page -->
+            <section id="page-task" class="page">
+                <!-- Task cards will be injected here by JS -->
+            </section>
+
+            <!-- Withdraw Page -->
+            <section id="page-withdraw" class="page">
+                 <div class="withdraw-card">
+                    <h3>Withdraw Points</h3>
+                    <p style="text-align: center; color: var(--secondary-text-color); margin-bottom: 20px;">Your total points: <span id="withdraw-points-total" style="color: var(--accent-color); font-weight: bold;"></span></p>
+                    <form id="withdraw-form">
+                        <div class="form-group">
+                            <label for="withdraw-method">Withdrawal Method</label>
+                            <select id="withdraw-method" class="form-select">
+                                <option value="paypal">PayPal</option>
+                                <option value="wire">Wired Transfer</option>
+                            </select>
+                        </div>
+                        
+                        <div id="withdraw-details">
+                            <div id="paypal-details" class="active">
+                                <div class="form-group">
+                                    <label for="paypal-email">PayPal Email</label>
+                                    <input type="email" id="paypal-email" class="form-input" placeholder="you@example.com" required>
+                                </div>
+                            </div>
+                            <div id="wire-details">
+                                <div class="form-group">
+                                    <label for="bank-name">Bank Name</label>
+                                    <input type="text" id="bank-name" class="form-input" placeholder="Global Bank Inc.">
+                                </div>
+                                <div class="form-group">
+                                    <label for="account-number">Account Number</label>
+                                    <input type="text" id="account-number" class="form-input" placeholder="1234567890">
+                                </div>
+                                <div class="form-group">
+                                    <label for="routing-number">Routing Number / SWIFT</label>
+                                    <input type="text" id="routing-number" class="form-input" placeholder="ABCDEF123">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="withdraw-amount">Amount to Withdraw</label>
+                            <input type="number" id="withdraw-amount" class="form-input" placeholder="e.g., 5000" required>
+                        </div>
+
+                        <button type="submit" class="withdraw-button">Withdraw</button>
+                    </form>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <button class="nav-button" data-page="page-profile">
+                <svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M12,19.2C9.5,19.2 7.29,17.92 6,15.98C6.03,13.97 10,12.9 12,12.9C14,12.9 17.97,13.97 18,15.98C16.71,17.92 14.5,19.2 12,19.2Z"/></svg>
+                <span>Profile</span>
+            </button>
+            <button class="nav-button active" data-page="page-tap">
+                <svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,16.5V7.5L16,12L11,16.5Z"/></svg>
+                <span>Tap</span>
+            </button>
+            <button class="nav-button" data-page="page-task">
+                <svg viewBox="0 0 24 24"><path d="M20.5,11H19V7C19,5.9 18.1,5 17,5H7C5.9,5 5,5.9 5,7V17C5,18.1 5.9,19 7,19H11V20.5C11,21.3 11.7,22 12.5,22H17.5C18.3,22 19,21.3 19,20.5V19.5H20.5C21.3,19.5 22,18.8 22,18V12.5C22,11.7 21.3,11 20.5,11M17,17H7V7H17V17M20,17.5H19V13H17.5V11.5H19V12.5H20V17.5Z"/></svg>
+                <span>Task</span>
+            </button>
+            <button class="nav-button" data-page="page-withdraw">
+                <svg viewBox="0 0 24 24"><path d="M3,15H21V13H3M3,19H21V17H3M3,11H21V9H3M3,5V7H21V5M2,22H22V2H2V22Z"/></svg>
+                <span>Withdraw</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- STATE MANAGEMENT ---
+            const LOCAL_STORAGE_KEY = 'whaleTapState';
+            let gameState = {
+                points: 0,
+                energy: 1000,
+                maxEnergy: 1000,
+                energyPerTap: 1,
+                energyRefillRate: 1, // Per second
+                joinDate: new Date().toISOString(),
+                userName: 'Telegram User', // Simulated
+                tasks: [
+                    { id: 1, title: 'Watch YT Video #1', reward: 1000, completed: false, icon: '📺' },
+                    { id: 2, title: 'Watch YT Video #2', reward: 1000, completed: false, icon: '📺' },
+                    { id: 3, title: 'Watch YT Video #3', reward: 1000, completed: false, icon: '📺' },
+                    { id: 4, title: 'Watch YT Video #4', reward: 1000, completed: false, icon: '📺' },
+                    { id: 5, title: 'Watch YT Video #5', reward: 1000, completed: false, icon: '📺' }
+                ]
+            };
+
+            function saveState() {
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(gameState));
+            }
+
+            function loadState() {
+                const savedState = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (savedState) {
+                    gameState = JSON.parse(savedState);
+                } else {
+                    // First time user, save initial state
+                    saveState();
+                }
+            }
+
+            // --- UI ELEMENTS ---
+            const pages = document.querySelectorAll('.page');
+            const navButtons = document.querySelectorAll('.nav-button');
+            const coin = document.getElementById('coin');
+            const pointsCounter = document.getElementById('points-counter');
+            const energyLevel = document.getElementById('energy-level');
+            const energyLevelText = document.getElementById('energy-level-text');
+            const pageTask = document.getElementById('page-task');
+            const tapPage = document.getElementById('page-tap');
+
+            // --- NAVIGATION ---
+            function showPage(pageId) {
+                pages.forEach(page => page.classList.remove('active'));
+                document.getElementById(pageId).classList.add('active');
+
+                navButtons.forEach(button => {
+                    button.classList.toggle('active', button.dataset.page === pageId);
+                });
+                
+                // Refresh data when switching to a page
+                switch(pageId) {
+                    case 'page-profile': renderProfile(); break;
+                    case 'page-task': renderTasks(); break;
+                    case 'page-withdraw': renderWithdraw(); break;
+                }
+            }
+
+            navButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    showPage(button.dataset.page);
+                });
+            });
+
+            // --- RENDER FUNCTIONS ---
+            function updateUI() {
+                pointsCounter.textContent = Math.floor(gameState.points).toLocaleString();
+                energyLevelText.textContent = `${Math.floor(gameState.energy)} / ${gameState.maxEnergy}`;
+                energyLevel.style.width = `${(gameState.energy / gameState.maxEnergy) * 100}%`;
+            }
+
+            function renderProfile() {
+                document.getElementById('profile-avatar').textContent = gameState.userName.charAt(0).toUpperCase();
+                document.getElementById('profile-name').textContent = gameState.userName;
+                document.getElementById('profile-points').textContent = Math.floor(gameState.points).toLocaleString();
+                document.getElementById('profile-join-date').textContent = new Date(gameState.joinDate).toLocaleDateString();
+            }
+
+            function renderTasks() {
+                pageTask.innerHTML = '';
+                gameState.tasks.forEach(task => {
+                    const taskCard = document.createElement('div');
+                    taskCard.className = 'task-card';
+                    taskCard.innerHTML = `
+                        <div class="task-info">
+                            <span class="task-icon">${task.icon}</span>
+                            <div class="task-details">
+                                <h4>${task.title}</h4>
+                                <p>Reward: ${task.reward.toLocaleString()} points</p>
+                            </div>
+                        </div>
+                        <button class="task-button ${task.completed ? 'completed' : 'claim'}" data-task-id="${task.id}" ${task.completed ? 'disabled' : ''}>
+                            ${task.completed ? 'Completed' : 'Claim'}
+                        </button>
+                    `;
+                    pageTask.appendChild(taskCard);
+                });
+                
+                // Add event listeners to new buttons
+                document.querySelectorAll('.task-button.claim').forEach(button => {
+                    button.addEventListener('click', handleTaskClaim);
+                });
+            }
+            
+            function renderWithdraw() {
+                document.getElementById('withdraw-points-total').textContent = Math.floor(gameState.points).toLocaleString();
+            }
+
+            // --- GAME LOGIC ---
+
+            // Tap Functionality
+            coin.addEventListener('click', (e) => {
+                if (gameState.energy >= gameState.energyPerTap) {
+                    gameState.points += 1;
+                    gameState.energy -= gameState.energyPerTap;
+
+                    // Show floating text effect
+                    const x = e.clientX;
+                    const y = e.clientY;
+                    const floatingText = document.createElement('div');
+                    floatingText.className = 'floating-text';
+                    floatingText.textContent = '+1';
+                    floatingText.style.left = `${x}px`;
+                    floatingText.style.top = `${y}px`;
+                    tapPage.appendChild(floatingText);
+                    
+                    floatingText.addEventListener('animationend', () => {
+                        floatingText.remove();
+                    });
+
+                    updateUI();
+                }
+            });
+
+            // Energy Refill
+            setInterval(() => {
+                if (gameState.energy < gameState.maxEnergy) {
+                    gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + gameState.energyRefillRate);
+                    updateUI();
+                    saveState();
+                }
+            }, 1000); // Refills every second
+
+            // Task Completion
+            function handleTaskClaim(event) {
+                const taskId = parseInt(event.target.dataset.taskId);
+                const task = gameState.tasks.find(t => t.id === taskId);
+                if (task && !task.completed) {
+                    task.completed = true;
+                    gameState.points += task.reward;
+                    alert(`Task completed! You earned ${task.reward.toLocaleString()} points.`);
+                    saveState();
+                    renderTasks(); // Re-render to update button state
+                    updateUI(); // Update points display if visible
+                }
+            }
+            
+            // Withdraw Functionality
+            const withdrawForm = document.getElementById('withdraw-form');
+            const withdrawMethodSelect = document.getElementById('withdraw-method');
+            const withdrawDetails = document.getElementById('withdraw-details');
+
+            withdrawMethodSelect.addEventListener('change', (e) => {
+                const selectedMethod = e.target.value;
+                Array.from(withdrawDetails.children).forEach(child => {
+                    child.classList.remove('active');
+                });
+                document.getElementById(`${selectedMethod}-details`).classList.add('active');
+            });
+            
+            withdrawForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const amountInput = document.getElementById('withdraw-amount');
+                const amount = parseInt(amountInput.value);
+
+                if (isNaN(amount) || amount <= 0) {
+                    alert('Please enter a valid amount.');
+                    return;
+                }
+                if (amount > gameState.points) {
+                    alert('Insufficient points for this withdrawal.');
+                    return;
+                }
+                
+                // Simulate withdrawal
+                gameState.points -= amount;
+                saveState();
+                
+                // Simulate success and reset form
+                alert(`Withdrawal of ${amount.toLocaleString()} points initiated to your selected method. This is a simulation.`);
+                amountInput.value = '';
+                updateUI();
+                renderWithdraw();
+            });
+
+
+            // --- INITIALIZATION ---
+            function init() {
+                loadState();
+                updateUI();
+                showPage('page-tap'); // Start on the tap page
+                
+                // Prevent double tap zoom
+                document.body.addEventListener('touchstart', function(e){
+                    if(e.touches.length > 1){
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+
+            }
+
+            init();
+        });
+    </script>
+</body>
+</html>
