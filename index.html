@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>TapSwap Refined</title>
+    <title>WhaleTap</title>
     <!-- Telegram WebApp JS -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
@@ -965,7 +965,7 @@
         function generateReferralLink() {
              const refSpan = profileReferral; // Use the defined element
              if (userData.telegramUser && userData.telegramUser.id) {
-                 const botUsername = 'YourTapSwapBot'; // Replace with your bot's username
+                 const botUsername = 'YourWhaleTapBot'; // Replace with your bot's username
                  const link = `t.me/${botUsername}?start=${userData.telegramUser.id}`;
                  refSpan.textContent = link;
                  refSpan.onclick = () => {
